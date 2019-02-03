@@ -5,6 +5,7 @@ import android.app.Activity;
 import android.content.Intent;
 import android.content.IntentSender;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
@@ -44,11 +45,26 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.PolylineOptions;
+import com.google.gson.Gson;
+import com.trembleturn.trembleturn.POJO.Routes;
+import com.trembleturn.trembleturn.POJO.Steps;
+import com.trembleturn.trembleturn.webservice.ApiRouter;
+import com.trembleturn.trembleturn.webservice.ApiRoutes;
+import com.trembleturn.trembleturn.webservice.ErrorType;
+import com.trembleturn.trembleturn.webservice.OnResponseListener;
+
+import org.json.JSONObject;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
-public class MapsSearchActivity extends BaseActivity implements OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, LocationListener, ResultCallback<LocationSettingsResult> {
+public class MapsSearchActivity extends BaseActivity implements
+        OnMapReadyCallback,
+        GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
+        LocationListener, ResultCallback<LocationSettingsResult>,
+        OnResponseListener {
 
     public static final int REQUEST_LOCATION_CODE = 99;
     public static final int RC_RESOLVE_GPS_PERMISSION = 10001;
@@ -64,6 +80,7 @@ public class MapsSearchActivity extends BaseActivity implements OnMapReadyCallba
     private LocationRequest locationRequest;
     private Location lastLocation;
     private Marker currentLocationMarker;
+    protected Routes routes;
 
 
     public void init() {
@@ -196,10 +213,10 @@ public class MapsSearchActivity extends BaseActivity implements OnMapReadyCallba
         buildGoogleApiClient();
     }
 
-    public void showDestinationOnMap(String location) {
+    public LatLng showDestinationOnMap(String location) {
         List<Address> addressList = null;
         MarkerOptions mo = new MarkerOptions();
-
+        LatLng latlng = new LatLng(19.022231, 72.856226);
         if(!location.equals(""))
         {
             Geocoder geocoder = new Geocoder(this);
@@ -209,17 +226,14 @@ public class MapsSearchActivity extends BaseActivity implements OnMapReadyCallba
                 e.printStackTrace();
             }
 
-            for(int i=0; i<addressList.size(); i++)
-            {
-                Address myAddress = addressList.get(i);
-                LatLng latlng = new LatLng(myAddress.getLatitude(), myAddress.getLongitude());
-                mo.position(latlng);
-                mo.title("Your Search Result !");
-                mMap.addMarker(mo);
-                mMap.animateCamera(CameraUpdateFactory.newLatLng(latlng));
-
-            }
+            Address myAddress = addressList.get(0);
+            latlng = new LatLng(myAddress.getLatitude(), myAddress.getLongitude());
+            mo.position(latlng);
+            mo.title("Your Search Result !");
+            mMap.addMarker(mo);
+            mMap.animateCamera(CameraUpdateFactory.newLatLng(latlng));
         }
+        return latlng;
     }
 
     public void onClick(View v) {
@@ -227,14 +241,180 @@ public class MapsSearchActivity extends BaseActivity implements OnMapReadyCallba
 
             case R.id.iv_search:
                 String dest = etDest.getText().toString();
-                showDestinationOnMap(dest);
-                // get directions
+                LatLng destLatLng = showDestinationOnMap(dest);
+                LatLng source = new LatLng(lastLocation.getLatitude(), lastLocation.getLongitude());
+                getAtoBSteps(source, destLatLng);
                 // show start FAB
                 break;
             case R.id.fab:
                 // Start vibrations
 
         }
+    }
+
+    private void indicateLeft() {
+        vibrateLeft();
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                stopVibrateLeft();
+            }
+        }, 1000);
+
+    }
+
+    private void indicateRight() {
+        vibrateRight();
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                stopVibrateRight();
+            }
+        }, 1000);
+    }
+
+    private void vibrateLeft() {
+        try {
+            new ApiRouter(this, this, ApiRoutes.RC_BAND_LEFT_HALF, TAG)
+                    .makeStringGetRequest(ApiRoutes.BAND_LEFT_HALF);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void stopVibrateLeft() {
+        try {
+            new ApiRouter(this, this, ApiRoutes.RC_BAND_LEFT_STOP, TAG)
+                    .makeStringGetRequest(ApiRoutes.BAND_LEFT_STOP);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void vibrateRight() {
+        try {
+            new ApiRouter(this, this, ApiRoutes.RC_BAND_RIGHT_HALF, TAG)
+                    .makeStringGetRequest(ApiRoutes.BAND_RIGHT_HALF);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void stopVibrateRight() {
+        try {
+            new ApiRouter(this, this, ApiRoutes.RC_BAND_RIGHT_STOP, TAG)
+                    .makeStringGetRequest(ApiRoutes.BAND_RIGHT_STOP);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void getAtoBSteps(LatLng source, LatLng dest) {
+        try {
+            new ApiRouter(this, this, ApiRoutes.RC_A2B_STEPS, TAG)
+                    .makeStringGetRequest(ApiRoutes.getA2BRequestUrl(source, dest));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void onSuccess(int requestCode, JSONObject response) {
+        switch (requestCode) {
+            case ApiRoutes.RC_A2B_STEPS:
+                try {
+                    routes = new Gson().fromJson(response.getJSONArray("routes").get(0).toString(), Routes.class);
+                    Log.i(TAG, routes.legs.get(0).start_location.lat + " " + routes.legs.get(0).steps.get(0).end_location.lat);
+                    String []pathdisplay = getPaths(routes);
+                    directiondisplay(pathdisplay);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                break;
+
+            case ApiRoutes.RC_BAND_LEFT_HALF:
+                Log.i(TAG, "Vibrate left band successful");
+                break;
+            case ApiRoutes.RC_BAND_RIGHT_HALF:
+                Log.i(TAG, "Vibrate right band successful");
+                break;
+        }
+    }
+
+    public String[] getPaths(Routes route){
+
+        List<Steps> step = route.legs.get(0).steps;
+        String routes[] = new String[step.size()];
+        for(int i=0;i<step.size();i++){
+
+            routes[i] = getPath(step.get(i));
+        }
+
+        return routes;
+    }
+
+    public String getPath(Steps step){
+
+        String polyline = step.polyline.points;
+        return polyline;
+    }
+
+    public void directiondisplay(String[] path){
+
+
+        for(int i =0 ; i<path.length ; i++){
+
+
+
+            PolylineOptions options = new PolylineOptions();
+            options.color(Color.RED);
+            options.width(10);
+            options.addAll(decode(path[i]));
+
+            mMap.addPolyline(options);
+        }
+    }
+
+    public static List<LatLng> decode(final String encodedPath) {
+        int len = encodedPath.length();
+
+        // For speed we preallocate to an upper bound on the final length, then
+        // truncate the array before returning.
+        final List<LatLng> path = new ArrayList<LatLng>();
+        int index = 0;
+        int lat = 0;
+        int lng = 0;
+
+        while (index < len) {
+            int result = 1;
+            int shift = 0;
+            int b;
+            do {
+                b = encodedPath.charAt(index++) - 63 - 1;
+                result += b << shift;
+                shift += 5;
+            } while (b >= 0x1f);
+            lat += (result & 1) != 0 ? ~(result >> 1) : (result >> 1);
+
+            result = 1;
+            shift = 0;
+            do {
+                b = encodedPath.charAt(index++) - 63 - 1;
+                result += b << shift;
+                shift += 5;
+            } while (b >= 0x1f);
+            lng += (result & 1) != 0 ? ~(result >> 1) : (result >> 1);
+
+            path.add(new LatLng(lat * 1e-5, lng * 1e-5));
+        }
+
+        return path;
+    }
+
+
+    @Override
+    public void onError(int requestCode, ErrorType errorType, JSONObject response) {
+
     }
 
     public void setAnimation(GoogleMap myMap, final List<LatLng> directionPoint) {
