@@ -185,6 +185,7 @@ public class MapsSearchActivity extends BaseActivity implements OnMapReadyCallba
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps_search);
         init();
+        initializeMap();
         buildGoogleApiClient();
     }
 

@@ -7,6 +7,11 @@
     android:id="@+id/root"
     tools:context=".MapsSearchActivity">
 
+    <FrameLayout
+        android:id="@+id/maps_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
+
     <android.support.v7.widget.Toolbar
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
@@ -46,11 +51,6 @@
                 android:layout_weight="2"/>
         </LinearLayout>
     </android.support.v7.widget.Toolbar>
-
-    <FrameLayout
-        android:id="@+id/maps_container"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
 
     <android.support.design.widget.FloatingActionButton
         android:id="@+id/fab"
