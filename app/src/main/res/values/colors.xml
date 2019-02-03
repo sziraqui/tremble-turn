@@ -8,4 +8,8 @@
     <color name="black">#000000</color>
     <color name="blue_light">#95CFCF</color>
     <color name="blue_bright">#6699FF</color>
+    <color name="gray_light">#A7A7A7</color>
+    <color name="gray">#707070</color>
+    <color name="gray_dark">#202020</color>
+    <color name="blue_dull">#76A5AF</color>
 </resources>
