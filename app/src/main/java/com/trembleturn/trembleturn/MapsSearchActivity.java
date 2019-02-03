@@ -332,6 +332,17 @@ public class MapsSearchActivity extends BaseActivity implements
 
     }
 
+    private void indicateRampLeft() {
+        vibrateLeftHalf();
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                stopVibrateLeft();
+            }
+        }, VIBRATION_DELAY);
+
+    }
+
     private void indicateRight() {
         vibrateRight();
         new Handler().postDelayed(new Runnable() {
@@ -342,7 +353,26 @@ public class MapsSearchActivity extends BaseActivity implements
         }, VIBRATION_DELAY);
     }
 
+    private void indicateRampRight() {
+        vibrateRight();
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                stopVibrateRight();
+            }
+        }, VIBRATION_DELAY);
+    }
+
     private void vibrateLeft() {
+        try {
+            new ApiRouter(this, this, ApiRoutes.RC_BAND_LEFT_FULL, TAG)
+                    .makeStringGetRequest(ApiRoutes.BAND_LEFT_FULL);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void vibrateLeftHalf() {
         try {
             new ApiRouter(this, this, ApiRoutes.RC_BAND_LEFT_HALF, TAG)
                     .makeStringGetRequest(ApiRoutes.BAND_LEFT_HALF);
@@ -361,6 +391,15 @@ public class MapsSearchActivity extends BaseActivity implements
     }
 
     private void vibrateRight() {
+        try {
+            new ApiRouter(this, this, ApiRoutes.RC_BAND_RIGHT_FULL, TAG)
+                    .makeStringGetRequest(ApiRoutes.BAND_RIGHT_FULL);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void vibrateRightHalf() {
         try {
             new ApiRouter(this, this, ApiRoutes.RC_BAND_RIGHT_HALF, TAG)
                     .makeStringGetRequest(ApiRoutes.BAND_RIGHT_HALF);
@@ -478,11 +517,19 @@ public class MapsSearchActivity extends BaseActivity implements
                     myMap.animateCamera(CameraUpdateFactory.newLatLng(directionPoint.get(i)));
 
                     if (man.get(i).contains("right")) {
-                        indicateRight();
+                        if(man.get(i).contains("keep") || man.get(i).contains("ramp")) {
+                            indicateRampRight();
+                        } else {
+                            indicateRight();
+                        }
                     } else if (man.get(i).contains("left")) {
-                        indicateLeft();
+                        if(man.get(i).contains("keep") || man.get(i).contains("ramp")) {
+                            indicateRampLeft();
+                        } else {
+                            indicateLeft();
+                        }
                     } else {
-
+                        Log.d(TAG, "neither right nor left");
                     }
                     Log.d("maneuver", man.get(i));
 
