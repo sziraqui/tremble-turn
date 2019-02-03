@@ -170,7 +170,7 @@ public class LoginActivity extends BaseActivity implements
     private void updateUI(boolean isSignedIn){
 
         Intent intent;
-        intent = new Intent(this, MainActivity.class);
+        intent = new Intent(this, MapsSearchActivity.class);
         if(isSignedIn){
 
             startActivity(intent);
