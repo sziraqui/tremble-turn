@@ -5,16 +5,21 @@ import android.app.Activity;
 import android.content.Intent;
 import android.content.IntentSender;
 import android.content.pm.PackageManager;
+import android.location.Address;
+import android.location.Geocoder;
 import android.location.Location;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.SystemClock;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
-import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
+import android.view.animation.Interpolator;
+import android.view.animation.LinearInterpolator;
 import android.widget.EditText;
 import android.widget.ImageView;
 
@@ -33,11 +38,15 @@ import com.google.android.gms.location.LocationSettingsStatusCodes;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.Projection;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+
+import java.io.IOException;
+import java.util.List;
 
 public class MapsSearchActivity extends BaseActivity implements OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, LocationListener, ResultCallback<LocationSettingsResult> {
 
@@ -83,7 +92,6 @@ public class MapsSearchActivity extends BaseActivity implements OnMapReadyCallba
             mMap.setMyLocationEnabled(true);
         }
     }
-
 
     protected synchronized void buildGoogleApiClient() {
         client = new GoogleApiClient.Builder(this).
@@ -131,9 +139,10 @@ public class MapsSearchActivity extends BaseActivity implements OnMapReadyCallba
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == RC_RESOLVE_GPS_PERMISSION) {
-            if(resultCode == Activity.RESULT_OK){
+            if (resultCode == Activity.RESULT_OK) {
                 Log.d(TAG, "GPS permission granted through resolution");
-            } if (resultCode == Activity.RESULT_CANCELED) {
+            }
+            if (resultCode == Activity.RESULT_CANCELED) {
                 Log.d(TAG, "GPS permission resolution failed");
             }
         }
@@ -158,8 +167,7 @@ public class MapsSearchActivity extends BaseActivity implements OnMapReadyCallba
     public void onLocationChanged(Location location) {
         lastLocation = location;
 
-        if(currentLocationMarker!=null)
-        {
+        if (currentLocationMarker != null) {
             currentLocationMarker.remove();
         }
 
@@ -174,8 +182,7 @@ public class MapsSearchActivity extends BaseActivity implements OnMapReadyCallba
         mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
         mMap.animateCamera(CameraUpdateFactory.zoomBy(10));
 
-        if(client!=null)
-        {
+        if (client != null) {
             LocationServices.FusedLocationApi.removeLocationUpdates(client, this);
         }
     }
@@ -189,18 +196,93 @@ public class MapsSearchActivity extends BaseActivity implements OnMapReadyCallba
         buildGoogleApiClient();
     }
 
+    public void showDestinationOnMap(String location) {
+        List<Address> addressList = null;
+        MarkerOptions mo = new MarkerOptions();
+
+        if(!location.equals(""))
+        {
+            Geocoder geocoder = new Geocoder(this);
+            try {
+                addressList=geocoder.getFromLocationName(location, 5);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            for(int i=0; i<addressList.size(); i++)
+            {
+                Address myAddress = addressList.get(i);
+                LatLng latlng = new LatLng(myAddress.getLatitude(), myAddress.getLongitude());
+                mo.position(latlng);
+                mo.title("Your Search Result !");
+                mMap.addMarker(mo);
+                mMap.animateCamera(CameraUpdateFactory.newLatLng(latlng));
+
+            }
+        }
+    }
 
     public void onClick(View v) {
         switch (v.getId()) {
-            case R.id.et_dest:
-                //set map marker
-                break;
+
             case R.id.iv_search:
-                // set marker
+                String dest = etDest.getText().toString();
+                showDestinationOnMap(dest);
                 // get directions
                 // show start FAB
                 break;
+            case R.id.fab:
+                // Start vibrations
+
         }
+    }
+
+    public void setAnimation(GoogleMap myMap, final List<LatLng> directionPoint) {
+        Marker marker = myMap.addMarker(new MarkerOptions()
+                .position(directionPoint.get(0))
+                .flat(true));
+
+        myMap.animateCamera(CameraUpdateFactory.newLatLngZoom(directionPoint.get(0), 10));
+
+        animateMarker(myMap, marker, directionPoint, false);
+    }
+
+    private void animateMarker(final GoogleMap myMap, final Marker marker, final List<LatLng> directionPoint, final boolean hideMarker) {
+        final Handler handler = new Handler();
+        final long start = SystemClock.uptimeMillis();
+        Projection proj = myMap.getProjection();
+        final long duration = 30000;
+
+        final Interpolator interpolator = new LinearInterpolator();
+
+        handler.post(new Runnable() {
+            int i = 0;
+
+            @Override
+            public void run() {
+                long elapsed = SystemClock.uptimeMillis() - start;
+                float t = interpolator.getInterpolation((float) elapsed / duration);
+                if (i < directionPoint.size()) {
+                    marker.setPosition(directionPoint.get(i));
+                    myMap.animateCamera(CameraUpdateFactory.newLatLng(directionPoint.get(i)));
+
+                }
+                //myMap.animateCamera(CameraUpdateFactory.zoomTo(2.0f));
+
+                i++;
+
+                if (t < 1.0) {
+                    // Post again 16ms later.
+                    handler.postDelayed(this, 1000);
+                } else {
+                    if (hideMarker) {
+                        marker.setVisible(false);
+                    } else {
+                        marker.setVisible(true);
+                    }
+                }
+            }
+        });
     }
 
 }
