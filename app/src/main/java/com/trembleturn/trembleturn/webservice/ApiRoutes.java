@@ -8,8 +8,8 @@ public abstract class ApiRoutes {
 
     public static final String API_URL = "https://maps.googleapis.com/maps/api/directions/json?";
     public static final String API_KEY = "AIzaSyD61OtmkLZi8l_F3sVVe0R3DH5QfaZ3kbc";
-    public static final String LEFT_BAND_URL = "http://192.168.43.43";
-    public static final String RIGHT_BAND_URL = "http://192.168.43.53";
+    public static final String LEFT_BAND_URL = "http://192.168.43.53";
+    public static final String RIGHT_BAND_URL = "http://192.168.43.43";
     public static final String FULL_PWM = "/r";
     public static final String HALF_PWM = "/h";
     public static final String STOP = "/s";
