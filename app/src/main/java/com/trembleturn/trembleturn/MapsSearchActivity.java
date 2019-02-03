@@ -223,7 +223,7 @@ public class MapsSearchActivity extends BaseActivity implements
         if (currentLocationMarker != null) {
             currentLocationMarker.remove();
         }
-
+        Log.d(TAG, "onLocationChanged:" + location.getLatitude() + " " + location.getLongitude());
         LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
 
         MarkerOptions markerOptions = new MarkerOptions();
@@ -252,6 +252,7 @@ public class MapsSearchActivity extends BaseActivity implements
     public LatLng showDestinationOnMap(String location) {
         List<Address> addressList = null;
         MarkerOptions mo = new MarkerOptions();
+        Log.d(TAG, "Current location:" +location);
         LatLng latlng = new LatLng(19.022231, 72.856226);
         if (!location.equals("")) {
             Geocoder geocoder = new Geocoder(this);
@@ -265,6 +266,7 @@ public class MapsSearchActivity extends BaseActivity implements
             latlng = new LatLng(myAddress.getLatitude(), myAddress.getLongitude());
             mo.position(latlng);
             mo.title("Your Search Result !");
+            mo.flat(true);
             mMap.addMarker(mo);
             mMap.animateCamera(CameraUpdateFactory.newLatLng(latlng));
         }
