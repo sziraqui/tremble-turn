@@ -50,6 +50,10 @@ public class MainActivity extends BaseActivity implements OnResponseListener {
                 Log.d(TAG, "vibrate right");
                 vibrateRight();
                 break;
+            case R.id.next_activity:
+                Intent i = new Intent(this, MapsSearchActivity.class);
+                startActivity(i);
+                break;
         }
 
     }
