@@ -17,12 +17,12 @@ public class Legs implements Parcelable {
 	@SerializedName("end_address")
 	public String endaddress;
 
-	public EndLocation endlocation;
+	public EndLocation end_location;
 
 	@SerializedName("start_address")
 	public String startaddress;
 
-	public StartLocation startlocation;
+	public StartLocation start_location;
 
 	public List<Steps> steps;
 
@@ -44,9 +44,9 @@ public class Legs implements Parcelable {
 		dest.writeParcelable(this.distance, flags);
 		dest.writeParcelable(this.duration, flags);
 		dest.writeString(this.endaddress);
-		dest.writeParcelable(this.endlocation, flags);
+		dest.writeParcelable(this.end_location, flags);
 		dest.writeString(this.startaddress);
-		dest.writeParcelable(this.startlocation, flags);
+		dest.writeParcelable(this.start_location, flags);
 		dest.writeList(this.steps);
 	}
 
@@ -57,9 +57,9 @@ public class Legs implements Parcelable {
 		this.distance = in.readParcelable(Distance.class.getClassLoader());
 		this.duration = in.readParcelable(Duration.class.getClassLoader());
 		this.endaddress = in.readString();
-		this.endlocation = in.readParcelable(EndLocation.class.getClassLoader());
+		this.end_location = in.readParcelable(EndLocation.class.getClassLoader());
 		this.startaddress = in.readString();
-		this.startlocation = in.readParcelable(StartLocation.class.getClassLoader());
+		this.start_location = in.readParcelable(StartLocation.class.getClassLoader());
 		this.steps = new ArrayList<Steps>();
 		in.readList(this.steps, Steps.class.getClassLoader());
 	}

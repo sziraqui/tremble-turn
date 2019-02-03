@@ -91,7 +91,7 @@ public class MainActivity extends BaseActivity implements OnResponseListener {
             case ApiRoutes.RC_A2B_STEPS:
                 try {
                     Routes routes = new Gson().fromJson(response.getJSONArray("routes").get(0).toString(), Routes.class);
-                    Log.i(TAG, routes.legs.get(0).steps.get(0).htmlinstructions);
+                    Log.i(TAG, routes.legs.get(0).start_location.lat + " " + routes.legs.get(0).steps.get(0).end_location.lat);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }

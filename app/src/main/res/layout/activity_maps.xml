@@ -20,8 +20,8 @@
 
     <EditText
         android:id="@+id/TF_tocation"
-        android:layout_width="310dp"
-        android:layout_height="62dp"
+        android:layout_width="176dp"
+        android:layout_height="60dp"
         android:ems="10"
         android:inputType="textPersonName"
         android:text="Name" />
@@ -31,8 +31,18 @@
         android:layout_width="wrap_content"
         android:layout_height="62dp"
         android:layout_alignParentRight="true"
+        android:layout_marginRight="110dp"
         android:onClick="OnClick"
         android:src="@drawable/icons8search24" />
+
+    <Button
+        android:id="@+id/setPoints"
+        android:layout_width="wrap_content"
+        android:layout_height="58dp"
+        android:layout_alignEnd="@+id/B_search"
+        android:layout_marginEnd="-104dp"
+        android:onClick="setPoints"
+        android:text="set" />
 
     <!--tools:layout="@layout/activity_maps"-->
 </RelativeLayout>

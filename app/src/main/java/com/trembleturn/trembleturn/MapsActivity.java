@@ -2,11 +2,14 @@ package com.trembleturn.trembleturn;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
+import android.graphics.Point;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
 //import android.location.LocationListener;
 import android.os.Build;
+import android.os.Handler;
+import android.os.SystemClock;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
@@ -14,6 +17,8 @@ import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
 import android.view.View;
+import android.view.animation.Interpolator;
+import android.view.animation.LinearInterpolator;
 import android.widget.EditText;
 import android.widget.Toast;
 
@@ -24,6 +29,7 @@ import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.Projection;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
@@ -33,6 +39,7 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -44,6 +51,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private Location lastLocation;
     private Marker currentLocationMarker;
     public static final int REQUEST_LOCATION_CODE = 99;
+
+    String[] latlong =  "-34.8799074,174.7565664".split(",");
+    double latitude = Double.parseDouble(latlong[0]);
+    double longitude = Double.parseDouble(latlong[1]);
+
+    LatLng location = new LatLng(latitude, longitude);
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -59,10 +73,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
+
+//        animateMarker(currentLocationMarker, location, false);
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults)
+    {
 //        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         switch(requestCode)
         {
@@ -89,30 +106,108 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
 
-    /**
-     * Manipulates the map once available.
-     * This callback is triggered when the map is ready to be used.
-     * This is where we can add markers or lines, add listeners or move the camera. In this case,
-     * we just add a marker near Sydney, Australia.
-     * If Google Play services is not installed on the device, the user will be prompted to install
-     * it inside the SupportMapFragment. This method will only be triggered once the user has
-     * installed Google Play services and returned to the app.
-     */
-    @Override
-    public void onMapReady(GoogleMap googleMap) {
-        mMap = googleMap;
+//    public void animateMarker(final Marker marker, final LatLng toPosition, final boolean hideMarker)
+//    {
 
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED )
-        {
+//        final Handler handler = new Handler();
+//        final long start = SystemClock.uptimeMillis();
+//        Projection proj = mMap.getProjection();
+//        Point startPoint = proj.toScreenLocation(marker.getPosition());
+//        final LatLng startLatLng = proj.fromScreenLocation(startPoint);
+//        final long duration = 500;
+//
+//        final Interpolator interpolator = new LinearInterpolator();
+//
+//        handler.post(new Runnable()
+//        {
+//            @Override
+//            public void run()
+//            {
+//                long elapsed = SystemClock.uptimeMillis() - start;
+//                float t = interpolator.getInterpolation((float) elapsed / duration);
+//                double lng = t * toPosition.longitude + (1 - t) * startLatLng.longitude;
+//                double lat = t * toPosition.latitude + (1 - t) * startLatLng.latitude;
+//                marker.setPosition(new LatLng(lat, lng));
+//
+//                if (t < 1.0)
+//                {
+//                    // Post again 16ms later.
+//                    handler.postDelayed(this, 16);
+//                }
+//
+//                else
+//                {
+//                    if (hideMarker)
+//                    {
+//                        marker.setVisible(false);
+//                    }
+//                    else
+//                    {
+//                        marker.setVisible(true);
+//                    }
+//                }
+//            }
+//        });
+ //   }
 
-            buildGoogleApiClient();
-            mMap.setMyLocationEnabled(true);
 
-        }
+    public static void setAnimation(GoogleMap myMap, final List<LatLng> directionPoint)
+    {
+        Marker marker = myMap.addMarker(new MarkerOptions()
+                .position(directionPoint.get(0))
+                .flat(true));
 
+        myMap.animateCamera(CameraUpdateFactory.newLatLngZoom(directionPoint.get(0), 10));
+
+        animateMarker(myMap, marker, directionPoint, false);
     }
 
-    protected synchronized void buildGoogleApiClient() {
+
+    private static void animateMarker(final GoogleMap myMap, final Marker marker, final List<LatLng> directionPoint, final boolean hideMarker)
+    {
+        final Handler handler = new Handler();
+        final long start = SystemClock.uptimeMillis();
+        Projection proj = myMap.getProjection();
+        final long duration = 30000;
+
+        final Interpolator interpolator = new LinearInterpolator();
+
+        handler.post(new Runnable()
+        {
+            int i = 0;
+
+            @Override
+            public void run()
+            {
+                long elapsed = SystemClock.uptimeMillis() - start;
+                float t = interpolator.getInterpolation((float) elapsed / duration);
+                if (i < directionPoint.size())
+                {
+                    marker.setPosition(directionPoint.get(i));
+                    myMap.animateCamera(CameraUpdateFactory.newLatLng(directionPoint.get(i)));
+
+                }
+                //myMap.animateCamera(CameraUpdateFactory.zoomTo(2.0f));
+
+                i++;
+
+
+                if (t < 1.0) {
+                    // Post again 16ms later.
+                    handler.postDelayed(this, 1000);
+                } else {
+                    if (hideMarker) {
+                        marker.setVisible(false);
+                    } else {
+                        marker.setVisible(true);
+                    }
+                }
+            }
+        });
+    }
+
+    protected synchronized void buildGoogleApiClient()
+    {
         client = new GoogleApiClient.Builder(this).
                 addConnectionCallbacks(this).
                 addOnConnectionFailedListener(this).
@@ -121,6 +216,19 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         client.connect();
     }
+
+    @Override
+    public void onMapReady(GoogleMap googleMap)
+    {
+        mMap = googleMap;
+
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED )
+        {
+            buildGoogleApiClient();
+            mMap.setMyLocationEnabled(true);
+        }
+    }
+
 
     @Override
     public void onLocationChanged(Location location)
@@ -179,40 +287,87 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     mMap.animateCamera(CameraUpdateFactory.newLatLng(latlng));
 
                 }
-
-
             }
         }
     }
 
+    public void setPoints(View v)
+    {
+        if(v.getId() == R.id.setPoints)
+        {
+            MarkerOptions mo = new MarkerOptions();
+
+            List<LatLng> zz = new ArrayList<LatLng>();
+//            zz.add(new LatLng(19.0269, 72.8553));
+//            zz.add(new LatLng(73.015137, 19.447169));
+//            zz.add(new LatLng(18.87705190456764, 432.9396057128907));
+//            zz.add(new LatLng(18.87900103610622, 433.06320190429693));
+//            zz.add(new LatLng(18.79386786395132, 433.0625152587891));
+
+            zz.add(new LatLng(43.6533096, -79.3827656));
+            zz.add(new LatLng(43.6557259, -79.38373369999999));
+            zz.add(new LatLng(43.6557259, -79.38373369999999));
+            zz.add(new LatLng(43.6618361, -79.35452389999999));
+            zz.add(new LatLng(43.6557259, -79.38373369999999));
+            zz.add(new LatLng(43.66366379999999, -79.3555052));
+            zz.add(new LatLng(43.6618361, -79.35452389999999));
+            zz.add(new LatLng(43.7628257, -79.33669689999999));
+            zz.add(new LatLng(43.66366379999999, -79.3555052));
+            zz.add(new LatLng(43.7680179, -79.3292728));
+            zz.add(new LatLng(43.7628257, -79.33669689999999));
+            zz.add(new LatLng(43.7901516, -79.2235381));
+            zz.add(new LatLng(43.7680179, -79.3292728));
+            zz.add(new LatLng(43.79311999999999, -79.2162862));
+            zz.add(new LatLng(43.7901516, -79.2235381));
+            zz.add(new LatLng(43.7901516, -79.2235381));
+
+
+//
+//            zz.add(new LatLng(-35.27801,149.12958));
+//            zz.add(new LatLng(-35.28032,149.12907));
+//            zz.add(new LatLng(-35.28099,149.12929));
+//            zz.add(new LatLng(-35.28144,149.12984));
+//            zz.add(new LatLng(-35.28194,149.13003));
+//            zz.add(new LatLng(-35.28282,149.12956));
+//            zz.add(new LatLng(-35.28302,149.12881));
+//            zz.add(new LatLng(-35.28473,149.12836));
+
+
+
+
+
+
+
+
+//            String[] latlong =  "19.0269, 72.8553".split(",");
+//            double latitude = Double.parseDouble(latlong[0]);
+//            double longitude = Double.parseDouble(latlong[1]);
+//
+//            LatLng location = new LatLng(latitude, longitude);
+//            mo.position(location);
+//            mo.title("Your Search Result !");
+//            Marker aa=mMap.addMarker(mo);
+//            mMap.animateCamera(CameraUpdateFactory.newLatLng(location));
+
+            setAnimation(mMap,zz);
+        }
+
+    }
+
 
     @Override
-    public void onConnected(@Nullable Bundle bundle) {
+    public void onConnected(@Nullable Bundle bundle)
+    {
         locationRequest = new LocationRequest();
 
         locationRequest.setInterval(1000);
         locationRequest.setFastestInterval(1000);
         locationRequest.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
 
-//        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-//            // TODO: Consider calling
-//            //    ActivityCompat#requestPermissions
-//            // here to request the missing permissions, and then overriding
-//            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-//            LocationServices.FusedLocationApi.requestLocationUpdates(client, locationRequest, this);
-//            // to handle the case where the user grants the permission. See the documentation
-//            // for ActivityCompat#requestPermissions for more details.
-//            return;
-//        }
-
         if(ContextCompat.checkSelfPermission(this,Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED)
         {
             LocationServices.FusedLocationApi.requestLocationUpdates(client, locationRequest, this);
         }
-
-
-
-
     }
 
     public boolean checkLocationPermission()
@@ -242,12 +397,14 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     @Override
-    public void onConnectionSuspended(int i) {
+    public void onConnectionSuspended(int i)
+    {
 
     }
 
     @Override
-    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
+    public void onConnectionFailed(@NonNull ConnectionResult connectionResult)
+    {
 
     }
 }

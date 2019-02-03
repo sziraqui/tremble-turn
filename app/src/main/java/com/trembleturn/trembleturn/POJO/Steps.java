@@ -3,8 +3,6 @@ package com.trembleturn.trembleturn.POJO;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-import java.util.List;
- 
 import com.google.gson.annotations.SerializedName;
 
 public class Steps implements Parcelable {
@@ -13,7 +11,7 @@ public class Steps implements Parcelable {
 
 	public Duration duration;
 
-	public EndLocation endlocation;
+	public EndLocation end_location;
 
 	@SerializedName("html_instructions")
 	public String htmlinstructions;
@@ -23,7 +21,7 @@ public class Steps implements Parcelable {
 
 	public Polyline polyline;
 
-	public StartLocation startlocation;
+	public StartLocation start_location;
 
 	@SerializedName("travel_mode")
 	public String trvelmode;
@@ -46,11 +44,11 @@ public class Steps implements Parcelable {
 	public void writeToParcel(Parcel dest, int flags) {
 		dest.writeParcelable(this.distance, flags);
 		dest.writeParcelable(this.duration, flags);
-		dest.writeParcelable(this.endlocation, flags);
+		dest.writeParcelable(this.end_location, flags);
 		dest.writeString(this.htmlinstructions);
 		dest.writeString(this.maneuver);
 		dest.writeParcelable(this.polyline, flags);
-		dest.writeParcelable(this.startlocation, flags);
+		dest.writeParcelable(this.start_location, flags);
 		dest.writeString(this.trvelmode);
 	}
 
@@ -60,11 +58,11 @@ public class Steps implements Parcelable {
 	protected Steps(Parcel in) {
 		this.distance = in.readParcelable(Distance.class.getClassLoader());
 		this.duration = in.readParcelable(Duration.class.getClassLoader());
-		this.endlocation = in.readParcelable(EndLocation.class.getClassLoader());
+		this.end_location = in.readParcelable(EndLocation.class.getClassLoader());
 		this.htmlinstructions = in.readString();
 		this.maneuver = in.readString();
 		this.polyline = in.readParcelable(Polyline.class.getClassLoader());
-		this.startlocation = in.readParcelable(StartLocation.class.getClassLoader());
+		this.start_location = in.readParcelable(StartLocation.class.getClassLoader());
 		this.trvelmode = in.readString();
 	}
 
